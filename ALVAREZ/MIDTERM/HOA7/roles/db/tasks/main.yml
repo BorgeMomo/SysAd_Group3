@@ -1,0 +1,19 @@
+---
+- name: Install MariaDB on Ubuntu
+  apt:
+    name: mariadb-server
+    state: latest
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install MariaDB on CentOS
+  dnf:
+    name: mariadb-server
+    state: latest
+  when: ansible_distribution == "CentOS"
+
+- name: Start and enable MariaDB
+  service:
+    name: mariadb
+    state: started
+    enabled: true

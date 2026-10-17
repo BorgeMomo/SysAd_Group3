@@ -1,0 +1,45 @@
+---
+- name: Install required packages
+  ansible.builtin.dnf:
+    name:
+      - curl
+      - gnupg2
+    state: present
+
+- name: Import Elastic GPG key
+  ansible.builtin.rpm_key:
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+
+- name: Add Elastic 8.x repository
+  ansible.builtin.yum_repository:
+    name: elastic-8.x
+    description: Elastic 8.x Repository
+    baseurl: https://artifacts.elastic.co/packages/8.x/yum
+    enabled: true
+    gpgcheck: true
+    gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+- name: Install Kibana 8.19.23
+  ansible.builtin.dnf:
+    name: kibana-8.19.23
+    state: present
+    allow_downgrade: true
+
+- name: Configure Kibana
+  ansible.builtin.copy:
+    dest: /etc/kibana/kibana.yml
+    content: |
+      server.host: "0.0.0.0"
+      server.port: 5601
+      elasticsearch.hosts:
+        - "http://192.168.56.105:9200"
+    owner: root
+    group: kibana
+    mode: "0660"
+
+- name: Enable and start Kibana
+  ansible.builtin.systemd:
+    name: kibana
+    enabled: true
+    state: restarted
