@@ -1,0 +1,9 @@
+- name: Testing some stuff
+  hosts: servers
+  gather_facts: yes
+
+  tasks:
+  - name: Create text file
+    ansible.builtin.file:
+      path: "~/text.txt"
+      state: touch
