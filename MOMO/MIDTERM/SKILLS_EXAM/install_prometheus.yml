@@ -1,0 +1,119 @@
+---
+- hosts: all
+  become: true
+  tasks:
+
+    #this is all task 1
+  - name: TASK 1 update the repository index for UBUNTU
+    ansible.builtin.apt:
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+  - name: TASK 1 update repository index for CENTOS
+    ansible.builtin.dnf:
+      update_cache: yes
+    when: ansible_distribution == "CentOS"
+
+  - name: TASK 1 install required utilities UBUNTU
+    ansible.builtin.apt:
+      name:
+        - wget
+        - curl
+        - tar
+        - gzip
+      state: present
+    when: ansible_distribution == "Ubuntu"
+
+  - name: TASK 1 install required utilities CENTOS
+    ansible.builtin.dnf:
+      name:
+        - wget
+        - curl
+        - tar 
+        - gzip
+      state: present
+    when: ansible_distribution == "CentOS"
+
+    #this is task 2
+  - name: TASK 2 create prometheus system user
+    ansible.builtin.user:
+      name: prometheus
+      system: yes
+      shell: /bin/false
+      create_home: no
+
+    #this is task 3
+  - name: TASK 3 create the prometheus directories
+    ansible.builtin.file:
+      path: "{{ item }}"
+      state: directory
+      owner: prometheus
+      group: prometheus
+      mode: '0755'
+    loop:
+      - /etc/prometheus
+      - /var/lib/prometheus
+
+    #this is task 4
+  - name: TASK 4 which is downloading the epic prometheus 
+    ansible.builtin.unarchive:
+      src: "https://github.com/prometheus/prometheus/releases/download/v3.14.0/prometheus-3.14.0.linux-amd64.tar.gz"
+      dest: /tmp
+      remote_src: yes
+
+    #this is task 5
+  - name: TASK 5 which is to copy binaries to /usr/local/bin
+    ansible.builtin.copy:
+      src: "/tmp/prometheus-3.14.0.linux-amd64/{{ item }}"
+      dest: "/usr/local/bin/{{ item }}"
+      owner: prometheus
+      group: prometheus
+      mode: '0755'
+      remote_src: yes
+    loop:
+      - prometheus
+      - promtool
+
+    #this is task 6
+  - name: TASK 6 aka copying the default prometheus.yml to the /etc/prometheus location
+    ansible.builtin.copy:
+      src: "/tmp/prometheus-3.14.0.linux-amd64/prometheus.yml"
+      dest: /etc/prometheus/prometheus.yml
+      owner: prometheus
+      group: prometheus
+      mode: '0644'
+      remote_src: yes
+
+    #this is task 7
+
+    #this is task 8
+  - name: TASK 8 which is to create systemd service file for Prometheus
+    ansible.builtin.copy:
+      dest: /etc/systemd/system/prometheus.service
+      content: |
+        [Unit]
+        Description=Prometheus Time Series Collection and Processing Server
+        Wants=network-online.target
+        After=network-online.target
+
+        [Service]
+        User=prometheus
+        Group=prometheus
+        Type=simple
+        ExecStart=/usr/local/bin/prometheus \
+          --config.file=/etc/prometheus/prometheus.yml \
+          --storage.tsdb.path=/var/lib/prometheus
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+      mode: '0644'
+
+    #this is task 9
+  - name: TASK 9 which is to start then enable then reload prometheus
+    ansible.builtin.systemd:
+      name: prometheus
+      state: started
+      enabled: yes
+      daemon_reload: yes
+
