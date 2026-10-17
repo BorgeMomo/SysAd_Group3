@@ -1,0 +1,24 @@
+---
+- name: Install the epic Docker and also Start it
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install Docker on Ubuntu
+      ansible.builtin.apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Install Docker on CentOS
+      ansible.builtin.dnf:
+        name: docker
+        state: present
+      when: ansible_distribution == "CentOS"
+
+    - name: Start and enable the epic Docker
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes
