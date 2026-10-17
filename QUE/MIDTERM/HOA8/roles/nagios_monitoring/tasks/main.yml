@@ -1,0 +1,216 @@
+---
+# STEP 1: Update Package Repository
+- name: Step 1 - Update local package repository (Ubuntu)
+  ansible.builtin.apt:
+    update_cache: yes
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Step 1 - Update local package repository (CentOS)
+  ansible.builtin.dnf:
+    update_cache: yes
+  when: ansible_facts['os_family'] == 'RedHat'
+
+# STEP 2: Install Required Dependencies
+- name: Step 2 - Install build tools, web server runtime, and libraries (Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - autoconf
+      - gcc
+      - libc6
+      - make
+      - apache2
+      - php
+      - libapache2-mod-php
+      - libgd-dev
+      - extract
+      - unzip
+      - libssl-dev
+      - openssl
+      - wget
+      - bc
+      - gawk
+      - gettext
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Step 2 - Enable EPEL Repository (CentOS)
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Step 2 - Install build tools, web server runtime, and libraries (CentOS)
+  ansible.builtin.dnf:
+    name:
+      - gcc
+      - glibc
+      - glibc-common
+      - make
+      - httpd
+      - httpd-tools
+      - python3-passlib
+      - php
+      - gd
+      - gd-devel
+      - openssl-devel
+      - wget
+      - unzip
+      - bc
+      - gawk
+      - gettext
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'
+
+# STEP 3: Create Service Accounts & Command Groups
+- name: Step 3 - Create system group nagcmd
+  ansible.builtin.group:
+    name: nagcmd
+    state: present
+
+- name: Step 3 - Create system user nagios and assign to nagcmd
+  ansible.builtin.user:
+    name: nagios
+    groups: nagcmd
+    append: yes
+    state: present
+
+- name: Step 3 - Add web server user (www-data) to nagcmd group (Ubuntu)
+  ansible.builtin.user:
+    name: www-data
+    groups: nagcmd
+    append: yes
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Step 3 - Add web server user (apache) to nagcmd group (CentOS)
+  ansible.builtin.user:
+    name: apache
+    groups: nagcmd
+    append: yes
+  when: ansible_facts['os_family'] == 'RedHat'
+
+# STEP 4 & 5: Download & Extract Nagios Core
+- name: Step 4 - Download Nagios Core tarball into /tmp
+  ansible.builtin.get_url:
+    url: "https://github.com/NagiosEnterprises/nagioscore/releases/download/nagios-4.4.14/nagios-4.4.14.tar.gz"
+    dest: "/tmp/nagios-4.4.14.tar.gz"
+    mode: '0644'
+
+- name: Step 5 - Extract Nagios Core tarball
+  ansible.builtin.unarchive:
+    src: "/tmp/nagios-4.4.14.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+
+# STEP 6, 7 & 8: Build Nagios Core
+- name: Step 6 - Run configure script with command group
+  ansible.builtin.command:
+    cmd: "./configure --with-command-group=nagcmd"
+    chdir: "/tmp/nagios-4.4.14"
+    creates: "/tmp/nagios-4.4.14/Makefile"
+
+- name: Step 7 - Compile Nagios Core
+  ansible.builtin.command:
+    cmd: "make all"
+    chdir: "/tmp/nagios-4.4.14"
+
+- name: Step 8 - Install binaries, command mode, init scripts, and sample configs
+  ansible.builtin.command:
+    cmd: "make {{ item }}"
+    chdir: "/tmp/nagios-4.4.14"
+  loop:
+    - install
+    - install-commandmode
+    - install-init
+    - install-config
+
+# STEP 9: Apache Web Config
+- name: Step 9 - Write Apache HTTP server configuration file (Ubuntu)
+  ansible.builtin.command:
+    cmd: "make install-webconf"
+    chdir: "/tmp/nagios-4.4.14"
+    creates: "/etc/apache2/sites-available/nagios.conf"
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Step 9 - Write Apache HTTP server configuration file (CentOS)
+  ansible.builtin.command:
+    cmd: "make install-webconf"
+    chdir: "/tmp/nagios-4.4.14"
+    creates: "/etc/httpd/conf.d/nagios.conf"
+  when: ansible_facts['os_family'] == 'RedHat'
+
+# STEP 10: Set htpasswd Credentials
+- name: Step 10 - Create HTTP basic authentication user (nagiosadmin)
+  community.general.htpasswd:
+    path: /usr/local/nagios/etc/htpasswd.users
+    name: nagiosadmin
+    password: "Password123!"
+    owner: nagios
+    group: nagcmd
+    mode: '0640'
+
+# STEP 11: Web Server Configuration & Start
+- name: Step 11 - Enable rewrite and cgi modules (Ubuntu)
+  community.general.apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - rewrite
+    - cgi
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Step 11 - Restart Web Server (Ubuntu)
+  ansible.builtin.systemd:
+    name: apache2
+    state: restarted
+    enabled: yes
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Step 11 - Restart Web Server (CentOS)
+  ansible.builtin.systemd:
+    name: httpd
+    state: restarted
+    enabled: yes
+  when: ansible_facts['os_family'] == 'RedHat'
+
+# STEP 12 & 13: Download & Install Nagios Plugins
+- name: Step 12 - Download Nagios Plugins tarball
+  ansible.builtin.get_url:
+    url: "https://github.com/nagios-plugins/nagios-plugins/releases/download/release-2.4.6/nagios-plugins-2.4.6.tar.gz"
+    dest: "/tmp/nagios-plugins-2.4.6.tar.gz"
+    mode: '0640'
+
+- name: Step 12 - Extract Nagios Plugins tarball
+  ansible.builtin.unarchive:
+    src: "/tmp/nagios-plugins-2.4.6.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+
+- name: Step 13 - Configure, build, and install Nagios Plugins
+  ansible.builtin.shell:
+    cmd: "./configure --with-nagios-user=nagios --with-nagios-group=nagios && make && make install"
+    chdir: "/tmp/nagios-plugins-2.4.6"
+    creates: "/usr/local/nagios/libexec/check_ping"
+
+# STEP 14: Pre-flight Check
+- name: Step 14 - Execute Nagios configuration pre-flight check
+  ansible.builtin.command:
+    cmd: "/usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg"
+  register: nagios_check
+  failed_when: "'Total Errors:   0' not in nagios_check.stdout"
+
+# STEP 15: Enable & Start Nagios Service
+- name: Step 15 - Enable and start Nagios service
+  ansible.builtin.systemd:
+    name: nagios
+    state: restarted
+    enabled: yes
+
+# STEP 16: Verify Web Interface Accessibility
+- name: Step 16 - Verify Nagios Web Interface responds locally
+  ansible.builtin.uri:
+    url: "http://localhost/nagios/"
+    user: "nagiosadmin"
+    password: "Password123!"
+    force_basic_auth: yes
+    status_code: 200
+  register: web_ui_check

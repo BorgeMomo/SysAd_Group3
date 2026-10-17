@@ -1,0 +1,4 @@
+---
+apache_package: "{{ 'httpd' if ansible_facts['os_family'] == 'RedHat' else 'apache2' }}"
+php_package: "{{ 'php' if ansible_facts['os_family'] == 'RedHat' else 'libapache2-mod-php' }}"
+
