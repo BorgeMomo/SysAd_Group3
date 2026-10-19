@@ -1,0 +1,10 @@
+---
+- name: My First Playbook
+  hosts: linuxservers
+  tasks:
+    - name: Check uptime
+      command: uptime
+      register: uptime_result
+    - name: Display uptime
+      debug:
+        msg: "{{ uptime_result.stdout }}"

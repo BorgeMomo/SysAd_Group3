@@ -1,0 +1,25 @@
+---
+- name: Import Elastic GPG key
+  ansible.builtin.rpm_key:
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+
+- name: Add Elastic repository
+  ansible.builtin.yum_repository:
+    name: elastic-9.x
+    description: Elastic repository for 9.x packages
+    baseurl: https://artifacts.elastic.co/packages/9.x/yum
+    gpgcheck: yes
+    gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    enabled: yes
+
+- name: Install Logstash
+  ansible.builtin.yum:
+    name: logstash
+    state: present
+
+- name: Enable Logstash
+  ansible.builtin.systemd:
+    name: logstash
+    enabled: yes
+    state: started
