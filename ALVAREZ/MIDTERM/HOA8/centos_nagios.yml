@@ -1,0 +1,178 @@
+---
+- name: Install and configure Nagios Core on CentOS
+  hosts: CentOS
+  become: true
+
+  vars:
+    nagios_version: "4.4.14"
+    nagios_plugins_version: "2.4.9"
+    nagios_core_url: "https://assets.nagios.com/downloads/nagioscore/releases/nagios-{{ nagios_version }}.tar.gz"
+    nagios_plugins_url: "https://nagios-plugins.org/download/nagios-plugins-{{ nagios_plugins_version }}.tar.gz"
+    nagios_src_dir: "/usr/local/src"
+    nagios_admin_password: "nagiosadmin123"
+
+  tasks:
+    - name: Create nagios user
+      ansible.builtin.user:
+        name: nagios
+        shell: /bin/bash
+        create_home: true
+
+    - name: Create nagcmd group
+      ansible.builtin.group:
+        name: nagcmd
+        state: present
+
+    - name: Add nagios user to nagcmd group
+      ansible.builtin.user:
+        name: nagios
+        groups: nagcmd
+        append: true
+
+    - name: Add apache user to nagcmd group
+      ansible.builtin.user:
+        name: apache
+        groups: nagcmd
+        append: true
+
+    - name: Ensure source directory exists
+      ansible.builtin.file:
+        path: "{{ nagios_src_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Download Nagios Core source
+      ansible.builtin.get_url:
+        url: "{{ nagios_core_url }}"
+        dest: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}.tar.gz"
+        mode: "0644"
+
+    - name: Extract Nagios Core source
+      ansible.builtin.unarchive:
+        src: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}.tar.gz"
+        dest: "{{ nagios_src_dir }}"
+        remote_src: true
+        creates: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}/configure"
+
+    - name: Configure Nagios Core build (httpd path for CentOS)
+      ansible.builtin.command:
+        cmd: ./configure --with-httpd-conf=/etc/httpd/conf.d --with-nagios-group=nagios --with-command-group=nagcmd
+        chdir: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}"
+        creates: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}/Makefile"
+
+    - name: Compile Nagios Core (make all)
+      ansible.builtin.command:
+        cmd: make all
+        chdir: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}"
+        creates: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}/base/nagios"
+
+    - name: Install Nagios Core binaries
+      ansible.builtin.command:
+        cmd: make install
+        chdir: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}"
+        creates: /usr/local/nagios/bin/nagios
+
+    - name: Install Nagios init script
+      ansible.builtin.command:
+        cmd: make install-init
+        chdir: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}"
+        creates: /etc/init.d/nagios
+
+    - name: Install command mode
+      ansible.builtin.command:
+        cmd: make install-commandmode
+        chdir: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}"
+        creates: /usr/local/nagios/var/rw
+
+    - name: Install sample config files
+      ansible.builtin.command:
+        cmd: make install-config
+        chdir: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}"
+        creates: /usr/local/nagios/etc/nagios.cfg
+
+    - name: Install Nagios httpd web config (make install-webconf)
+      ansible.builtin.command:
+        cmd: make install-webconf
+        chdir: "{{ nagios_src_dir }}/nagios-{{ nagios_version }}"
+        creates: /etc/httpd/conf.d/nagios.conf
+
+    - name: Create Nagios web admin user (nagiosadmin)
+      community.general.htpasswd:
+        path: /usr/local/nagios/etc/htpasswd.users
+        name: nagiosadmin
+        password: "{{ nagios_admin_password }}"
+        owner: nagios
+        group: nagios
+        mode: "0640"
+
+    - name: Set SELinux context for Nagios directory
+      community.general.sefcontext:
+        target: '/usr/local/nagios(/.*)?'
+        setype: httpd_sys_content_t
+        state: present
+
+    - name: Apply SELinux context (restorecon)
+      ansible.builtin.command:
+        cmd: restorecon -Rv /usr/local/nagios
+      register: restorecon_result
+      changed_when: "'Relabeled' in restorecon_result.stdout"
+
+    - name: Allow HTTP through firewalld
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        state: enabled
+        immediate: true
+
+    - name: Download Nagios Plugins source
+      ansible.builtin.get_url:
+        url: "{{ nagios_plugins_url }}"
+        dest: "{{ nagios_src_dir }}/nagios-plugins-{{ nagios_plugins_version }}.tar.gz"
+        mode: "0644"
+
+    - name: Extract Nagios Plugins source
+      ansible.builtin.unarchive:
+        src: "{{ nagios_src_dir }}/nagios-plugins-{{ nagios_plugins_version }}.tar.gz"
+        dest: "{{ nagios_src_dir }}"
+        remote_src: true
+        creates: "{{ nagios_src_dir }}/nagios-plugins-{{ nagios_plugins_version }}/configure"
+
+    - name: Configure Nagios Plugins build
+      ansible.builtin.command:
+        cmd: ./configure --with-nagios-user=nagios --with-nagios-group=nagios
+        chdir: "{{ nagios_src_dir }}/nagios-plugins-{{ nagios_plugins_version }}"
+        creates: "{{ nagios_src_dir }}/nagios-plugins-{{ nagios_plugins_version }}/Makefile"
+
+    - name: Compile Nagios Plugins
+      ansible.builtin.command:
+        cmd: make
+        chdir: "{{ nagios_src_dir }}/nagios-plugins-{{ nagios_plugins_version }}"
+        creates: "{{ nagios_src_dir }}/nagios-plugins-{{ nagios_plugins_version }}/plugins/check_ping"
+
+    - name: Install Nagios Plugins
+      ansible.builtin.command:
+        cmd: make install
+        chdir: "{{ nagios_src_dir }}/nagios-plugins-{{ nagios_plugins_version }}"
+        creates: /usr/local/nagios/libexec/check_ping
+
+    - name: Validate Nagios configuration
+      ansible.builtin.command:
+        cmd: /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+      register: nagios_check
+      changed_when: false
+
+    - name: Show config validation result
+      ansible.builtin.debug:
+        msg: "{{ nagios_check.stdout_lines }}"
+
+    - name: Enable and start nagios service
+      ansible.builtin.service:
+        name: nagios
+        enabled: true
+        state: started
+
+    - name: Enable and restart httpd
+      ansible.builtin.service:
+        name: httpd
+        enabled: true
+        state: restarted

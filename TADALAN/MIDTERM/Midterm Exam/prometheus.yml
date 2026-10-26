@@ -1,0 +1,10 @@
+---
+# CPE 212 Midterm Skills Exam
+# Prometheus Installation using Ansible Roles
+
+- name: Install and Configure Prometheus
+  hosts: all
+  become: true
+
+  roles:
+    - prometheus

@@ -1,0 +1,24 @@
+---
+- name: install apache and php for Ubuntu servers
+  apt:
+    name:
+      - apache2
+      - libapache2-mod-php
+    state: latest
+    update_cache: true
+  when: ansible_distribution == "Ubuntu"
+
+- name: install apache and php for CentOS servers
+  dnf:
+    name:
+      - httpd
+      - php
+    state: latest
+  when: ansible_distribution == "CentOS"
+
+- name: start httpd (CentOS)
+  service:
+    name: httpd
+    state: started
+    enabled: true
+  when: ansible_distribution == "CentOS"

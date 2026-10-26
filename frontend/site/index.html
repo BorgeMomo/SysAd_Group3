@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CPE 212 Portfolio – Team 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="transition.js"></script>
+</head>
+<body>
+  <header class="banner">
+    <h1>Welcome.</h1>
+    <p>A project by Team 3</p>
+  </header>
+
+  <main class="members" id="members"></main>
+
+  <script src="students.js"></script>
+  <script>
+    const root = document.getElementById("members");
+    window.STUDENTS.forEach(s => {
+      const el = document.createElement("article");
+      el.className = "member";
+      el.innerHTML = `
+        <div class="photo-slot">
+          <img class="photo" src="${s.photo}" alt="Photo of ${s.name}"
+               onerror="this.parentElement.classList.add('pulse');this.remove()">
+        </div>
+        <div class="right">
+          <h2 class="name">${s.name}</h2>
+          <p class="desc">Activities, exams, and reflection</p>
+          <a class="button" href="student.html?id=${s.id}">
+            <span class="shadow"></span>
+            <span class="edge"></span>
+            <span class="front"><span>Open folder</span></span>
+          </a>
+        </div>`;
+      root.appendChild(el);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+---
+- name: Challenge Playbook
+  hosts: servers
+  tasks:
+    - name: Print welcome message
+      debug:
+        msg: "Welcome to Ansible Laboratory"

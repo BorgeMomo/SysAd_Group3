@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Folder – CPE 212</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="transition.js"></script>
+</head>
+<body>
+  <main class="profile-wrap" id="page"></main>
+
+  <!-- Popup: blurred page + card listing the files of the chosen term -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button type="button" class="modal-x" data-close aria-label="Close">&times;</button>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <p class="modal-sub" id="modal-sub"></p>
+      <div class="modal-list" id="modal-list"></div>
+    </div>
+  </div>
+
+  <script src="students.js"></script>
+  <script>
+    const id = new URLSearchParams(location.search).get("id");
+    const s = window.STUDENTS.find(x => x.id === id);
+    const page = document.getElementById("page");
+
+    if (!s) {
+      page.innerHTML = `<div class="card" style="grid-column:1/-1"><p>Student not found.</p>
+        <a class="button" href="index.html"><span class="shadow"></span><span class="edge"></span><span class="front"><span>Back</span></span></a></div>`;
+    } else {
+      document.title = s.name + " – CPE 212";
+
+      // A term is a list of { label, pdf, extra }. Either link may be left out ("extra" is shown as "Files").
+      // Older formats ({ label, href } and { hoa, exam }) still work.
+      const itemsOf = t => (t.items || [
+        { label: "Hands-on activity", pdf: t.hoa },
+        { label: "Exam", pdf: t.exam }
+      ]).map(i => ({ label: i.label, pdf: i.pdf || i.href || "", extra: i.extra || i.yaml || "" }));
+      const terms = { prelim: "Prelim", midterm: "Midterm", finals: "Finals" };
+      const plural = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+
+      // One wallet card per term. Resting: file count. Hovered: PDF / Files breakdown.
+      const holder = s.name.split(",")[0].toUpperCase();
+      const wcard = cls => {
+        const items = itemsOf(s[cls]);
+        const pdfs = items.filter(i => i.pdf).length, extras = items.filter(i => i.extra).length;
+        return `
+        <div class="wcard ${cls}" data-term="${cls}" role="button" tabindex="0" aria-haspopup="dialog"
+             aria-label="Open ${terms[cls]} files">
+          <div class="wcard-inner">
+            <div class="wcard-top">
+              <span>${terms[cls]}</span>
+              <span class="wcard-count">
+                <span class="count-short">${plural(items.length, "file")}</span>
+                <span class="count-detail">${pdfs} PDF · ${extras} ${extras === 1 ? "File" : "Files"}</span>
+              </span>
+              <div class="chip"></div>
+            </div>
+            <div class="wcard-bottom">
+              <div><span class="label">Student</span><span class="value">${holder}</span></div>
+            </div>
+          </div>
+        </div>`;
+      };
+      const total = ["prelim", "midterm", "finals"].reduce((n, k) => n + itemsOf(s[k]).length, 0);
+      const eye = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+
+      page.innerHTML = `
+        <aside class="profile" id="profile" tabindex="0">
+          <div class="flip">
+            <div class="flip-front">
+              <h2 class="flip-name">${s.name}</h2>
+              <p class="flip-program">Computer Engineering</p>
+            </div>
+            <div class="flip-back">
+              <h3 class="flip-title">Contribution</h3>
+              <p class="flip-text">${s.contribution}</p>
+            </div>
+          </div>
+        </aside>
+        <div class="folder-cell">
+          <div class="wallet" id="folder">
+            <div class="wallet-back"></div>
+            ${wcard("prelim")}${wcard("midterm")}${wcard("finals")}
+            <div class="pocket">
+              <svg class="pocket-svg" viewBox="0 0 280 160" preserveAspectRatio="none" fill="none" aria-hidden="true">
+                <path class="pocket-fill" d="M 0 20 C 0 10, 5 10, 10 10 C 20 10, 25 25, 40 25 L 240 25 C 255 25, 260 10, 270 10 C 275 10, 280 10, 280 20 L 280 120 C 280 155, 260 160, 240 160 L 40 160 C 20 160, 0 155, 0 120 Z"></path>
+                <path class="pocket-line" vector-effect="non-scaling-stroke" d="M 8 22 C 8 16, 12 16, 15 16 C 23 16, 27 29, 40 29 L 240 29 C 253 29, 257 16, 265 16 C 268 16, 272 16, 272 22 L 272 120 C 272 150, 255 152, 240 152 L 40 152 C 25 152, 8 152, 8 120 Z"></path>
+              </svg>
+              <div class="pocket-content">
+                <div class="total">
+                  <div class="total-stars">••••</div>
+                  <div class="total-real">${plural(total, "file")}</div>
+                </div>
+                <div class="pocket-label">Portfolio folder</div>
+                <div class="eye-wrap">
+                  <svg class="eye eye-slash" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${eye}<line x1="3" y1="3" x2="21" y2="21"></line></svg>
+                  <svg class="eye eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${eye}</svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <section class="card reflection">
+          <h3>Reflection</h3>
+          <p>${s.reflection}</p>
+        </section>
+        <div class="back-wrap"><a class="button" href="index.html"><span class="shadow"></span><span class="edge"></span><span class="front"><span>Back</span></span></a></div>`;
+
+      // Hover flips the profile card. Touch screens have no hover, so a tap flips it there.
+      const profile = document.getElementById("profile");
+      profile.addEventListener("click", () => {
+        if (matchMedia("(hover:none)").matches) profile.classList.toggle("flipped");
+      });
+
+      // ---- Click a card: page blurs, then a card pops up listing that term's files ----
+      // A row with only a PDF is one link. A row with PDF and Files gets PDF / Files sub-options.
+      const wallet = document.getElementById("folder");
+      const modal = document.getElementById("modal");
+      const link = (cls, href, html) => `<a class="${cls}" href="${href}" target="_blank" rel="noopener">${html}</a>`;
+      const entry = i => {
+        const opts = [i.pdf && ["PDF", i.pdf], i.extra && ["Files", i.extra]].filter(Boolean);
+        if (!opts.length) return `<div class="entry off"><span>${i.label}</span><span class="entry-type">No file yet</span></div>`;
+        if (opts.length === 1) return link("entry", opts[0][1],
+          `<span>${i.label}</span><span class="entry-type">${opts[0][0]}</span>`);
+        return `<div class="entry-group"><div class="entry-head">${i.label}</div>
+          <div class="subs">${opts.map(o => link("sub", o[1], `<span>${o[0]}</span><span class="sub-go">Open</span>`)).join("")}</div></div>`;
+      };
+
+      // The popup card grows out of the clicked wallet card (and shrinks back into it on close).
+      const mc = modal.querySelector(".modal-card");
+      let picked = null, timers = [];
+      const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+      const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+      const pose = card => {            // transform that puts the popup card exactly over `card`
+        const cr = card.getBoundingClientRect(), mr = mc.getBoundingClientRect();
+        mc.style.transform = `translate(${cr.left + cr.width / 2 - (mr.left + mr.width / 2)}px,` +
+          `${cr.top + cr.height / 2 - (mr.top + mr.height / 2)}px) scale(${cr.width / mr.width})`;
+        mc.style.backgroundColor = getComputedStyle(card).backgroundColor;
+      };
+      const openModal = card => {
+        clearTimers();
+        if (picked && picked !== card) picked.classList.remove("picked");
+        picked = card;
+        const items = itemsOf(s[card.dataset.term]);
+        document.getElementById("modal-title").textContent = terms[card.dataset.term];
+        document.getElementById("modal-sub").textContent = plural(items.length, "file");
+        document.getElementById("modal-list").innerHTML = items.map(entry).join("");
+        modal.hidden = false;
+        document.body.classList.add("modal-open");
+        mc.style.transition = "none"; mc.style.transform = "none"; mc.style.backgroundColor = "";
+        pose(card);                      // start exactly on top of the clicked card
+        void mc.offsetWidth;             // commit that start position
+        mc.style.transition = ""; mc.style.transform = ""; mc.style.backgroundColor = "";
+        card.classList.add("picked");    // original card steps aside
+        modal.classList.add("show");     // blur ramps up while the card grows to the centre
+        later(() => (modal.querySelector("a") || modal.querySelector(".modal-x")).focus({ preventScroll: true }), 500);
+      };
+      const closeModal = () => {
+        clearTimers();
+        modal.classList.remove("show");
+        document.body.classList.remove("modal-open");
+        if (picked) pose(picked);        // shrink back into the wallet card
+        const card = picked;
+        later(() => { if (card) { card.classList.remove("picked"); card.focus({ preventScroll: true }); } }, 260);
+        later(() => { modal.hidden = true; mc.style.transform = ""; mc.style.backgroundColor = ""; }, 340);
+      };
+      wallet.addEventListener("click", e => { const c = e.target.closest(".wcard"); if (c) openModal(c); });
+      wallet.addEventListener("keydown", e => {
+        const c = e.target.closest(".wcard");
+        if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openModal(c); }
+      });
+      modal.addEventListener("click", e => { if (e.target.closest("[data-close]")) closeModal(); });
+      document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+    }
+  </script>
+</body>
+</html>

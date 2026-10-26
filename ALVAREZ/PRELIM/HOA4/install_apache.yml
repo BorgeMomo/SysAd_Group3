@@ -1,0 +1,17 @@
+---
+- name: Install Apache
+  hosts: all
+  become: yes
+
+  tasks:
+   - name: Install Apache2
+     apt:
+      name: apache2
+      state: present
+      update_cache: yes
+
+   - name: Install PHP
+
+     apt: 
+       name: php
+       state: present

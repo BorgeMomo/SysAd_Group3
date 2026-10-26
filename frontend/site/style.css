@@ -1,0 +1,231 @@
+/* ---------- Palette: deep navy with soft indigo/purple glows ---------- */
+:root{
+  --bg:#0a0b14; --card:#0d0e19; --line:rgba(255,255,255,.1); --line-strong:rgba(255,255,255,.28);
+  --ink:#f5f6fb; --muted:#9aa0b6;
+  --photo:#151729; --accent:#7b86ff;
+  --f1:#15172b; --f2:#1b1e38; --f3:#232748;
+  --mc-bg:#0d0e19; --mc-block:#171a2e;
+  --flip-shadow:0 10px 30px rgba(0,0,0,.45);
+  --b-front:#7b86ff; --b-edge-d:#343a9e; --b-edge-m:#4f58d8; --b-text:#0a0b14;
+  --r:24px; --w:920px; --gap:40px;      /* one radius, one content width, one spacing step */
+}
+
+*{box-sizing:border-box}
+html{scrollbar-gutter:stable}
+body{margin:0;color:var(--ink);
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(48% 42% at 72% 26%,rgba(82,86,150,.20),transparent 72%),
+    radial-gradient(36% 34% at 98% 92%,rgba(104,74,190,.22),transparent 72%),
+    radial-gradient(40% 36% at 12% 62%,rgba(46,52,110,.14),transparent 72%);
+  background-attachment:fixed;
+  font-family:"Geist","Inter Tight",system-ui,-apple-system,"Segoe UI",sans-serif;
+  line-height:1.5;min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  padding:64px 24px;gap:var(--gap);-webkit-font-smoothing:antialiased;}
+
+/* ---------- Page transition: opacity only, so nothing moves or re-aligns ---------- */
+@keyframes page-in{from{opacity:0}to{opacity:1}}
+body > :not(script):not(.modal){animation:page-in .4s ease backwards}
+body.leaving > :not(script){opacity:0;transition:opacity .35s ease}
+
+.banner{width:min(var(--w),100%)}
+.banner h1{margin:0;font-weight:500;font-size:clamp(2.6rem,9vw,5.5rem);letter-spacing:-.04em;line-height:1}
+.banner p{margin:12px 0 0;color:var(--muted);font-size:1.05rem}
+
+/* ---------- Card ---------- */
+.card{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:24px}
+.photo{aspect-ratio:1/1;width:100%;background:var(--photo);border-radius:16px;object-fit:cover;display:block}
+
+/* ---------- Main page card (skeleton-style layout, real content) ---------- */
+.members{width:min(var(--w),100%);display:grid;grid-template-columns:repeat(2,1fr);gap:var(--gap)}
+.member{
+  display:flex;gap:1.25rem;min-height:13rem;padding:1.5rem;
+  background:var(--mc-bg);border:1px solid var(--line);border-radius:var(--r);
+}
+.member .photo-slot{position:relative;flex:none;width:40%;align-self:stretch;border-radius:16px;background:var(--mc-block);overflow:hidden}
+/* The photo fills the slot (any size/ratio is cropped to fit) and never changes the card height */
+.member .photo{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;border-radius:0;background:transparent;
+  object-fit:cover;object-position:center 20%}
+.member .photo-slot.pulse{animation:pulse 2s cubic-bezier(.4,0,.6,1) alternate-reverse infinite}
+.member .right{display:flex;flex:1 1 0%;flex-direction:column;gap:.75rem;min-width:0}
+.member .name{margin:0;font-size:1rem;font-weight:600;line-height:1.3}
+.member .desc{margin:0;font-size:.8rem;color:var(--muted)}
+.member .button{margin-top:auto}
+@keyframes pulse{to{opacity:.2}}
+
+/* ---------- 3D push button (main page) ---------- */
+.button{position:relative;display:block;border:none;background:transparent;padding:0;outline:none;
+  cursor:pointer;font-family:inherit;text-decoration:none}
+.button .shadow{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);
+  border-radius:8px;transform:translateY(2px);transition:transform 600ms cubic-bezier(.3,.7,.4,1)}
+.button .edge{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;
+  background:linear-gradient(to left,var(--b-edge-d) 0%,var(--b-edge-m) 8%,var(--b-edge-m) 92%,var(--b-edge-d) 100%)}
+.button .front{position:relative;display:flex;align-items:center;justify-content:center;
+  padding:10px 22px;font-size:1rem;font-weight:600;color:var(--b-text);background:var(--b-front);
+  border-radius:8px;transform:translateY(-4px);transition:transform 600ms cubic-bezier(.3,.7,.4,1)}
+.button:hover .shadow{transform:translateY(4px);transition:transform 250ms cubic-bezier(.3,.7,.4,1.5)}
+.button:hover .front{transform:translateY(-6px);transition:transform 250ms cubic-bezier(.3,.7,.4,1.5)}
+.button:active .shadow{transform:translateY(1px);transition:transform 34ms}
+.button:active .front{transform:translateY(-2px);transition:transform 34ms}
+.button .front span{user-select:none}
+.button:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:8px}
+
+a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+
+/* ---------- Student page ---------- */
+.profile-wrap{width:min(var(--w),100%);display:grid;grid-template-columns:240px repeat(3,1fr);
+  grid-template-rows:auto auto auto;gap:var(--gap)}
+/* ---------- Student card: hover to flip (name + program / contribution) ---------- */
+.profile{grid-column:1;grid-row:1 / span 2;align-self:start;width:240px;height:320px;
+  perspective:1000px;outline:none;-webkit-tap-highlight-color:transparent;user-select:none}
+.profile:focus-visible{outline:2px solid var(--accent);outline-offset:6px;border-radius:var(--r)}
+.flip{position:relative;width:100%;height:100%;text-align:center;
+  transition:transform .8s;transform-style:preserve-3d}
+.profile:hover .flip,.profile:focus-visible .flip,.profile.flipped .flip{transform:rotateY(180deg)}
+.flip-front,.flip-back{
+  position:absolute;display:flex;flex-direction:column;justify-content:center;
+  width:100%;height:100%;padding:24px;border-radius:var(--r);box-shadow:var(--flip-shadow);
+  -webkit-backface-visibility:hidden;backface-visibility:hidden;
+}
+.flip-front{background:var(--mc-bg);color:var(--ink);border:1px solid var(--line);gap:8px}
+.flip-back{background:var(--b-front);color:var(--b-text);border:1px solid var(--b-edge-m);
+  transform:rotateY(180deg);text-align:left;justify-content:flex-start;gap:12px}
+.flip-name{margin:0;font-size:1.4rem;font-weight:600;line-height:1.25}
+.flip-program{margin:0;font-size:.9rem;color:var(--muted)}
+.flip-title{margin:0;font-size:1.1rem;font-weight:600}
+.flip-text{margin:0;flex:1;overflow:auto;font-size:.95rem;line-height:1.55;opacity:.9}
+
+.term h3,.reflection h3{margin:0 0 10px;font-size:.95rem;font-weight:600;text-align:left;
+  padding-bottom:10px;border-bottom:1px solid var(--line)}
+.reflection{grid-column:2 / 5;grid-row:2;min-height:130px}
+.reflection p{margin:0;font-size:.95rem;color:var(--muted);max-width:60ch}
+.back-wrap{grid-column:1;grid-row:3}
+
+
+/* ---------- Wallet folder: pocket + three term cards that fan out on hover ---------- */
+.folder-cell{grid-column:2 / 5;grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-top:120px}
+.wallet{position:relative;width:min(360px,100%);height:346px;cursor:pointer;transition:transform .4s ease}
+.wallet:is(:hover,:focus-within){transform:translateY(-5px)}
+
+.wallet::before,.wallet::after{content:none!important}  /* no helper text under the wallet */
+.wallet-back{position:absolute;bottom:0;left:0;width:100%;height:200px;z-index:5;
+  background:var(--b-edge-m);border-radius:22px 22px 60px 60px;
+  box-shadow:inset 0 25px 35px rgba(0,0,0,.4),inset 0 5px 15px rgba(0,0,0,.5)}
+
+/* term cards */
+.wcard{position:absolute;left:10px;width:calc(100% - 20px);height:140px;padding:18px;border-radius:16px;
+  color:var(--ink);border:1px solid var(--line-strong);outline:none;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.12),0 -4px 15px rgba(0,0,0,.25);
+  transition:transform .6s cubic-bezier(.34,1.56,.64,1),z-index 0s;
+  animation:slideIntoPocket .8s cubic-bezier(.2,.8,.2,1) backwards}
+.wcard.prelim {background:var(--f1);bottom:90px;z-index:10;animation-delay:.1s}
+.wcard.midterm{background:var(--f2);bottom:65px;z-index:20;animation-delay:.2s}
+.wcard.finals {background:var(--f3);bottom:40px;z-index:30;animation-delay:.3s}
+@keyframes slideIntoPocket{0%{transform:translateY(-100px);opacity:0}100%{transform:translateY(0);opacity:1}}
+.wcard:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+
+.wcard-inner{display:flex;flex-direction:column;justify-content:space-between;height:100%}
+.wcard-top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.9rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:1px}
+.chip{width:32px;height:24px;background:rgba(255,255,255,.12);border-radius:4px;border:1px solid rgba(255,255,255,.1)}
+.wcard-bottom{display:flex;justify-content:space-between;align-items:flex-end}
+.label{display:block;margin-bottom:2px;font-size:.5rem;text-transform:uppercase;opacity:.7}
+.value{font-size:.65rem;font-weight:500;letter-spacing:.04em}
+.wcard-count{margin-left:auto;text-transform:none;font-weight:500;white-space:nowrap}
+.count-short{font-size:.8rem;letter-spacing:.04em;color:var(--muted)}
+.count-detail{display:none;font-size:.75rem;letter-spacing:.04em;font-family:ui-monospace,monospace;color:var(--accent)}
+
+/* the pocket in front */
+.pocket{position:absolute;bottom:0;left:0;width:100%;height:160px;z-index:40;
+  filter:drop-shadow(0 15px 25px rgba(0,0,0,.4));pointer-events:none}
+.pocket-svg{position:absolute;inset:0;width:100%;height:100%}
+.pocket-fill{fill:var(--b-front)}
+.pocket-line{stroke:var(--b-edge-m);stroke-width:1.5;stroke-dasharray:6 4}
+.pocket-content{position:absolute;top:45px;width:100%;display:flex;flex-direction:column;align-items:center;gap:8px;
+  text-align:center;color:var(--b-text)}
+.total{position:relative;height:26px;width:100%}
+.total-stars{font-size:1.5rem;letter-spacing:4px;line-height:26px;transition:.3s}
+.total-real{position:absolute;top:0;left:50%;transform:translate(-50%,10px);opacity:0;white-space:nowrap;
+  font-size:1.35rem;font-weight:600;line-height:26px;transition:.3s}
+.pocket-label{font-size:.75rem;font-weight:600;opacity:.7}
+.eye-wrap{position:relative;width:20px;height:20px;margin-top:2px;opacity:.35;transition:.3s}
+.eye{position:absolute;top:0;left:0;stroke:var(--b-text);transition:.3s}
+.eye-open{opacity:0}
+
+/* hover: wallet opens and the cards fan out */
+.wallet:is(:hover,:focus-within) .eye-wrap{opacity:1}
+.wallet:is(:hover,:focus-within) .prelim {transform:translateY(-75px) rotate(-3deg)}
+.wallet:is(:hover,:focus-within) .midterm{transform:translateY(-45px) rotate(2deg)}
+.wallet:is(:hover,:focus-within) .finals {transform:translateY(-10px)}
+.wallet:is(:hover,:focus-within) .total-stars{opacity:0}
+.wallet:is(:hover,:focus-within) .total-real{opacity:1;transform:translate(-50%,0)}
+.wallet:is(:hover,:focus-within) .eye-slash{opacity:0;transform:scale(.5)}
+.wallet:is(:hover,:focus-within) .eye-open{opacity:1;transform:scale(1.1)}
+
+/* hover one card: it nudges up (it never covers the other cards) and shows its PDF / Files count */
+.wallet:is(:hover,:focus-within) .prelim:is(:hover,:focus-visible) {transform:translateY(-90px) rotate(-3deg)}
+.wallet:is(:hover,:focus-within) .midterm:is(:hover,:focus-visible){transform:translateY(-60px) rotate(2deg)}
+.wallet:is(:hover,:focus-within) .finals:is(:hover,:focus-visible) {transform:translateY(-25px)}
+.wcard:is(:hover,:focus-visible) .count-short{display:none}
+.wcard:is(:hover,:focus-visible) .count-detail{display:inline}
+.wcard:is(:hover,:focus-visible){border-color:var(--accent)}
+
+/* clicked: the card hands over to the popup card, which grows out of it */
+.wcard{transition:transform .6s cubic-bezier(.34,1.56,.64,1),z-index 0s,opacity .1s ease}
+.wcard.picked{opacity:0;pointer-events:none}
+
+/* ---------- File popup: page blurs, then a card pops up and lists the files ---------- */
+.modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px}
+.modal[hidden]{display:none}
+.modal-backdrop{position:absolute;inset:0;background:rgba(6,7,14,0);
+  -webkit-backdrop-filter:blur(0);backdrop-filter:blur(0);
+  transition:background .25s ease,backdrop-filter .25s ease,-webkit-backdrop-filter .25s ease}
+.modal.show .modal-backdrop{background:rgba(6,7,14,.6);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.modal-card{position:relative;width:min(440px,100%);max-height:min(80vh,640px);display:flex;flex-direction:column;
+  padding:28px 28px 20px;background:var(--card);border:1px solid var(--line-strong);border-radius:var(--r);
+  box-shadow:0 24px 60px rgba(0,0,0,.6);will-change:transform;
+  transition:transform .36s cubic-bezier(.22,.8,.3,1),background-color .36s ease}
+.modal-card > *{opacity:0;transition:opacity .1s ease}
+.modal.show .modal-card > *{opacity:1;transition:opacity .2s ease .12s}
+.modal-x{position:absolute;top:14px;right:14px;width:32px;height:32px;border:0;border-radius:8px;background:transparent;
+  color:var(--muted);font-size:1.5rem;line-height:1;cursor:pointer}
+.modal-x:hover{color:var(--ink);background:rgba(255,255,255,.08)}
+.modal-x:focus-visible{outline:2px solid var(--accent)}
+.modal-title{margin:0;font-size:1.6rem;font-weight:600}
+.modal-sub{margin:2px 0 16px;font-size:.85rem;color:var(--muted)}
+.modal-list{overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;padding:2px 2px 8px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent}
+.entry,.entry-group{border:1px solid var(--line);border-radius:14px;background:var(--f1)}
+.entry{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;color:var(--ink);
+  text-decoration:none;font-weight:500;transition:border-color .2s,background .2s,transform .2s}
+.entry:hover,.entry:focus-visible{border-color:var(--accent);background:var(--f2);transform:translateY(-1px)}
+.entry-type,.sub-go{font-size:.72rem;font-weight:600;letter-spacing:.05em;color:var(--muted)}
+.entry:hover .entry-type{color:var(--accent)}
+.entry.off{color:var(--muted);border-style:dashed}
+.entry-group{padding:13px 12px 12px}
+.entry-head{padding:0 4px 10px;font-weight:500}
+.subs{display:flex;flex-direction:column;gap:6px;margin-left:12px;padding-left:12px;border-left:2px solid var(--b-edge-m)}
+.sub{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-radius:10px;
+  background:var(--f2);color:var(--ink);text-decoration:none;font-size:.9rem;font-weight:600;
+  border:1px solid transparent;transition:border-color .2s,background .2s}
+.sub:hover,.sub:focus-visible{border-color:var(--accent);background:var(--f3)}
+.sub:hover .sub-go{color:var(--accent)}
+body.modal-open{overflow:hidden}
+
+/* ---------- Responsive ---------- */
+@media (max-width:760px){
+  body{padding:40px 20px}
+  .members,.profile-wrap{gap:28px}
+  .members{grid-template-columns:1fr}
+  .profile-wrap{grid-template-columns:1fr 1fr}
+  .profile,.folder-cell,.reflection,.back-wrap{grid-column:1 / 3;grid-row:auto}
+}
+@media (max-width:480px){
+  .profile-wrap{grid-template-columns:1fr}
+  .profile,.folder-cell,.reflection,.back-wrap{grid-column:1}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
+  .pulse,.wcard{animation:none!important}
+  body{animation:none}
+}

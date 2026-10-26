@@ -1,0 +1,29 @@
+---
+- name: Build the web and database Docker image locally
+  hosts: local
+  connection: local
+  become: false
+
+  tasks:
+    - name: Create the Docker build directory
+      file:
+        path: "{{ playbook_dir }}/docker-lab"
+        state: directory
+
+    - name: Copy the Dockerfile
+      copy:
+        src: "{{ playbook_dir }}/Dockerfile"
+        dest: "{{ playbook_dir }}/docker-lab/Dockerfile"
+        remote_src: false
+
+    - name: Build the web and database image
+      command: docker build -t web-db-server "{{ playbook_dir }}/docker-lab"
+
+    - name: List Docker images
+      command: docker images
+      register: docker_images
+      changed_when: false
+
+    - name: Display Docker images
+      debug:
+        var: docker_images.stdout_lines

@@ -1,0 +1,8 @@
+---
+- name: Display Host and Group Variables
+  hosts: linuxservers
+  tasks:
+    - name: Show OS type and environment
+      debug:
+        msg: "Host {{ inventory_hostname }} is running {{ os_type }} in {{ environment }} environment"
+

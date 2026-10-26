@@ -1,0 +1,27 @@
+---
+- name: Build Docker image on Ubuntu and CentOS
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Create project directory
+      ansible.builtin.file:
+        path: /home/momo/activity11
+        state: directory
+        owner: momo
+
+    - name: Copy Dockerfile
+      ansible.builtin.copy:
+        src: Dockerfile
+        dest: /home/momo/activity11/Dockerfile
+        owner: momo
+
+    - name: Copy web page
+      ansible.builtin.copy:
+        src: index.html
+        dest: /home/momo/activity11/index.html
+        owner: momo
+
+    - name: Build Docker image
+      ansible.builtin.command:
+        cmd: docker build -t activity11-web-db /home/momo/activity11

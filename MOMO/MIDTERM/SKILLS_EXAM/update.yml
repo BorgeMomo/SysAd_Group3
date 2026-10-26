@@ -1,0 +1,10 @@
+    #these are all task 1
+  - name: TASK 1 update the repository index for UBUNTU
+    ansible.builtin.apt:
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+  - name: TASK 1 update repository index for CENTOS
+    ansible.builtin.dnf:
+      update_cache: yes
+    when: ansible_distribution == "CentOS"

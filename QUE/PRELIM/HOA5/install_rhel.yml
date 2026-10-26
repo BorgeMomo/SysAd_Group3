@@ -1,0 +1,27 @@
+---
+- name: Configure Web Server on Red Hat / CentOS OS
+  hosts: centos
+  become: true
+  tasks:
+    - name: Ensure HTTPD and PHP packages are installed
+      dnf:
+        name:
+          - httpd
+          - php
+        state: latest
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Ensure httpd service is started and enabled
+      service:
+        name: httpd
+        state: started
+        enabled: yes
+
+    - name: Allow HTTP port in firewall
+      ansible.posix.firewalld:
+        port: 80/tcp
+        permanent: yes
+        state: enabled
+        immediate: yes
+      ignore_errors: yes

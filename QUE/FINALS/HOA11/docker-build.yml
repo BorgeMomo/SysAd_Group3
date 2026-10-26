@@ -1,0 +1,27 @@
+---
+- name: Build Docker image
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Create project directory
+      ansible.builtin.file:
+        path: /home/queleroyubuntu3/CPE212_Activity11
+        state: directory
+        owner: queleroyubuntu3
+
+    - name: Copy Dockerfile
+      ansible.builtin.copy:
+        src: Dockerfile
+        dest: /home/queleroyubuntu3/CPE212_Activity11/Dockerfile
+        owner: queleroyubuntu3
+
+    - name: Copy web page
+      ansible.builtin.copy:
+        src: index.html
+        dest: /home/queleroyubuntu3/CPE212_Activity11/index.html
+        owner: queleroyubuntu3
+
+    - name: Build Docker image
+      ansible.builtin.command:
+        cmd: docker build -t cpe212-web-db /home/queleroyubuntu3/CPE212_Activity11

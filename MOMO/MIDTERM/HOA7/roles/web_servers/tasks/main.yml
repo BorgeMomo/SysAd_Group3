@@ -1,0 +1,36 @@
+---
+- name: Install Apache and PHP on Ubuntu
+  apt:
+    name:
+      - apache2
+      - libapache2-mod-php
+    state: latest
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install Apache and PHP on CentOS
+  dnf:
+    name:
+      - httpd
+      - php
+    state: latest
+  when: ansible_distribution == "CentOS"
+
+- name: Start and enable Apache on CentOS
+  service:
+    name: httpd
+    state: started
+    enabled: true
+  when: ansible_distribution == "CentOS"
+
+- name: copy default html file for site
+  tags:
+    - apache
+    - apache2
+    - httpd
+  copy:
+    src: files/default_site.html
+    dest: /var/www/html/index.html
+    owner: root
+    group: root
+    mode: '0644'
