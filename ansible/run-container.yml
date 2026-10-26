@@ -1,1 +1,14 @@
+---
+- name: Deploy the portfolio website containers
+  hosts: all
+  become: yes
 
+  tasks:
+    - name: Run the portfolio website container
+      community.docker.docker_container:
+        name: sysad-portfolio
+        image: sysad-portfolio:latest
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "8080:80"

@@ -1,1 +1,32 @@
+---
+- name: Build the portfolio Docker image
+  hosts: all
+  become: yes
 
+  tasks:
+    - name: Create the project directory on managed nodes
+      ansible.builtin.file:
+        path: /opt/sysad-portfolio
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: Copy website and member files to managed nodes
+      become: no
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../{{ item }}/"
+        dest: "/opt/sysad-portfolio/{{ item }}/"
+        mode: preserve
+      loop:
+        - docker
+        - frontend
+        - ALVAREZ
+        - MOMO
+        - QUE
+        - TADALAN
+
+    - name: Build the portfolio Docker image
+      ansible.builtin.command:
+        cmd: docker build -f docker/Dockerfile -t sysad-portfolio:latest .
+        chdir: /opt/sysad-portfolio
