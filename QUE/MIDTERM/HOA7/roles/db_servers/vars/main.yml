@@ -1,0 +1,2 @@
+---
+db_package: "{{ 'mariadb-server' if ansible_facts['os_family'] == 'RedHat' else 'mariadb-server' }}"

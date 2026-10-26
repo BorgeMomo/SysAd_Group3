@@ -1,0 +1,7 @@
+---
+- name: Deploy Nagios Monitoring on Ubuntu and CentOS
+  hosts: all
+  become: true
+
+  roles:
+    - nagios_monitoring

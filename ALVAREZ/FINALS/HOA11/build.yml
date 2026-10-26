@@ -1,0 +1,27 @@
+---
+- name: Build the web and database container image
+  hosts: localhost
+  become: true
+
+  tasks:
+    - name: Install Docker and Python Docker support
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - python3-docker
+        state: present
+        update_cache: true
+
+    - name: Enable and start Docker
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Build the Docker image
+      community.docker.docker_image:
+        name: activity11-web-db
+        tag: "1.0"
+        source: build
+        build:
+          path: "{{ playbook_dir }}"

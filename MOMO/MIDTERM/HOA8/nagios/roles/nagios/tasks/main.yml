@@ -1,0 +1,154 @@
+---
+- name: Update Ubuntu repository
+  apt:
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Update CentOS repository
+  dnf:
+    update_cache: yes
+  when: ansible_distribution == "CentOS"
+
+- name: Install Nagios dependencies on Ubuntu
+  apt:
+    name:
+      - autoconf
+      - gcc
+      - libc6
+      - make
+      - wget
+      - unzip
+      - apache2
+      - apache2-utils
+      - php
+      - libapache2-mod-php
+      - libgd-dev
+      - ufw
+      - openssl
+      - libssl-dev
+      - gettext
+      - automake
+      - build-essential
+      - snmp
+      - libnet-snmp-perl
+      - iputils-ping
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install Nagios dependencies on CentOS
+  dnf:
+    name:
+      - gcc
+      - glibc
+      - glibc-common
+      - perl
+      - make
+      - gettext
+      - automake
+      - autoconf
+      - wget
+      - gd
+      - gd-devel
+      - httpd
+      - php
+      - openssl-devel
+      - net-snmp
+      - net-snmp-utils
+    state: present
+  when: ansible_distribution == "CentOS"
+
+- name: Create Nagios group
+  group:
+    name: nagios
+    state: present
+
+- name: Create Nagios user
+  user:
+    name: nagios
+    group: nagios
+    shell: /bin/bash
+    state: present
+
+- name: Add web server user to Nagios group
+  user:
+    name: "{{ 'www-data' if ansible_distribution == 'Ubuntu' else 'apache' }}"
+    groups: nagios
+    append: yes
+
+- name: Download Nagios Core
+  shell: |
+    cd /tmp
+    wget -O nagioscore.tar.gz $(wget -q -O - https://api.github.com/repos/NagiosEnterprises/nagioscore/releases/latest | grep '"browser_download_url":' | grep -o 'https://[^"]*')
+  args:
+    creates: /tmp/nagioscore.tar.gz
+
+- name: Extract Nagios Core
+  unarchive:
+    src: /tmp/nagioscore.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Configure Nagios Core
+  shell: |
+    cd /tmp/nagios-[0-9]*
+    ./configure{% if ansible_distribution == 'Ubuntu' %} --with-httpd-conf=/etc/apache2/sites-enabled{% endif %}
+
+- name: Build Nagios Core
+  shell: |
+    cd /tmp/nagios-*
+    make all
+
+- name: Install Nagios Core
+  shell: |
+    cd /tmp/nagios-*
+    make install
+    make install-daemoninit
+    make install-commandmode
+    make install-config
+    make install-webconf
+
+- name: Enable Ubuntu Apache modules
+  shell: |
+    a2enmod rewrite
+    a2enmod cgi
+  when: ansible_distribution == "Ubuntu"
+
+- name: Download Nagios Plugins
+  shell: |
+    cd /tmp
+    wget -O nagios-plugins.tar.gz $(wget -q -O - https://api.github.com/repos/nagios-plugins/nagios-plugins/releases/latest | grep '"browser_download_url":' | grep -o 'https://[^"]*')
+  args:
+    creates: /tmp/nagios-plugins.tar.gz
+
+- name: Extract Nagios Plugins
+  unarchive:
+    src: /tmp/nagios-plugins.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Build and install Nagios Plugins
+  shell: |
+    cd /tmp/nagios-plugins-*
+    ./configure
+    make
+    make install
+
+- name: Enable and start Nagios
+  service:
+    name: nagios
+    state: started
+    enabled: yes
+
+- name: Enable and start Ubuntu Apache
+  service:
+    name: apache2
+    state: started
+    enabled: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Enable and start CentOS Apache
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+  when: ansible_distribution == "CentOS"

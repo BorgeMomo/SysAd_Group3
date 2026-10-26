@@ -1,0 +1,25 @@
+---
+- name: Import Elastic GPG key
+  rpm_key:
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+
+- name: Add Elastic 8.x repository
+  yum_repository:
+    name: elastic-8.x
+    description: Elastic repository for 8.x packages
+    baseurl: https://artifacts.elastic.co/packages/8.x/yum
+    gpgcheck: true
+    gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    enabled: true
+
+- name: Install Logstash
+  dnf:
+    name: logstash
+    state: present
+
+- name: Enable and start Logstash
+  systemd:
+    name: logstash
+    enabled: true
+    state: started

@@ -1,0 +1,5 @@
+[server1_lab]
+192.168.56.120 ansible_user=alvarezworkstation
+
+[centos_lab]
+192.168.56.122 ansible_user=ealvarez

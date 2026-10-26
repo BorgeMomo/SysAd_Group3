@@ -1,0 +1,22 @@
+---
+- name: Install Elasticsearch
+  hosts: all
+  become: true
+  roles:
+    - role: elasticsearch
+      when: inventory_hostname in groups['elasticsearch']
+
+- name: Install Kibana
+  hosts: all
+  become: true
+  roles:
+    - role: kibana
+      when: inventory_hostname in groups['kibana']
+
+- name: Install Logstash
+  hosts: all
+  become: true
+  roles: 
+    - role: logstash
+      when: inventory_hostname in groups['logstash']
+

@@ -1,0 +1,5 @@
+---
+- name: install database server packages
+  ansible.builtin.package:
+    name: "{{ db_package }}"
+    state: present

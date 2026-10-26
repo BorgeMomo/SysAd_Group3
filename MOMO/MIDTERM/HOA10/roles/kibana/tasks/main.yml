@@ -1,0 +1,33 @@
+---
+- name: Install the packages needed for Kibana
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - wget
+      - gnupg
+    state: present
+    update_cache: yes
+
+- name: Add the Kibana signing key
+  ansible.builtin.shell: |
+    wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor -o /usr/share/keyrings/kibana-keyring.gpg
+  args:
+    creates: /usr/share/keyrings/kibana-keyring.gpg
+
+- name: Add the Kibana package repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/kibana-keyring.gpg] https://artifacts.elastic.co/packages/9.x/apt stable main"
+    state: present
+    filename: kibana
+
+- name: Install Kibana on the server
+  ansible.builtin.apt:
+    name: kibana
+    state: present
+    update_cache: yes
+
+- name: Start Kibana and enable it at boot
+  ansible.builtin.service:
+    name: kibana
+    state: started
+    enabled: yes

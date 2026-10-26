@@ -1,0 +1,61 @@
+---
+- name: Install Nagios dependencies (Ubuntu and CentOS)
+  hosts: Ubuntu, CentOS
+  become: true
+
+  tasks:
+
+    - name: Update apt cache (Ubuntu)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Install Nagios dependencies on Ubuntu
+      ansible.builtin.apt:
+        name:
+          - apache2
+          - php
+          - gcc
+          - make
+          - libc6
+          - libc6-dev
+          - libgd-dev
+          - libssl-dev
+          - libapache2-mod-php
+          - unzip
+          - wget
+          - autoconf
+          - openssl
+          - apache2-utils
+          - python3-passlib
+        state: present
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Install Nagios dependencies on CentOS
+      ansible.builtin.dnf:
+        name:
+          - httpd
+          - php
+          - gcc
+          - glibc
+          - glibc-common
+          - gd
+          - gd-devel
+          - make
+          - openssl-devel
+          - net-snmp
+          - net-snmp-utils
+          - unzip
+          - wget
+          - autoconf
+          - httpd-tools
+          - policycoreutils-python-utils
+          - python3-pip
+        state: present
+      when: ansible_distribution == "CentOS"
+
+    - name: Install passlib via pip on CentOS (required by htpasswd module)
+      ansible.builtin.pip:
+        name: passlib
+        executable: pip3
+      when: ansible_distribution == "CentOS"

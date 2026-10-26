@@ -1,0 +1,3 @@
+---
+- import_playbook: ubuntu_nagios.yml
+- import_playbook: centos_nagios.yml

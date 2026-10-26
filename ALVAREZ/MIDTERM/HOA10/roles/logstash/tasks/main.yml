@@ -1,0 +1,48 @@
+---
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - curl
+      - gnupg
+    state: present
+    update_cache: true
+
+- name: Download Elastic GPG key
+  ansible.builtin.get_url:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    dest: /tmp/logstash.asc
+    mode: "0644"
+
+- name: Convert GPG key
+  ansible.builtin.command:
+    cmd: gpg --dearmor -o /usr/share/keyrings/elastic-keyring.gpg /tmp/logstash.asc
+  args:
+    creates: /usr/share/keyrings/elastic-keyring.gpg
+
+- name: Add Elastic repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/elastic-keyring.gpg] https://artifacts.elastic.co/packages/9.x/apt stable main"
+    state: present
+
+- name: Install Logstash
+  ansible.builtin.apt:
+    name: logstash
+    state: present
+    update_cache: true
+
+- name: Configure Logstash
+  ansible.builtin.copy:
+    dest: /etc/logstash/logstash.yml
+    content: |
+      path.data: /var/lib/logstash
+      path.logs: /var/log/logstash
+    owner: root
+    group: logstash
+    mode: "0644"
+
+- name: Enable Logstash
+  ansible.builtin.systemd:
+    name: logstash
+    enabled: true
+    state: started

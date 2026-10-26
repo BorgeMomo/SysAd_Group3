@@ -1,0 +1,16 @@
+---
+- name: Add the current user to the cool Docker group
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Create the cool Docker group
+      ansible.builtin.group:
+        name: docker
+        state: present
+
+    - name: Add momo to the cool Docker group
+      ansible.builtin.user:
+        name: momo
+        groups: docker
+        append: yes

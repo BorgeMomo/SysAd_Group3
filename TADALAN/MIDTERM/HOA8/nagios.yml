@@ -1,0 +1,14 @@
+---
+- name: Install Nagios on Ubuntu Workstation
+  hosts: workstation
+  become: yes
+
+  roles:
+    - nagios
+
+- name: Install Nagios on CentOS
+  hosts: centos
+  become: yes
+
+  roles:
+    - nagios

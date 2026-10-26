@@ -1,0 +1,32 @@
+---
+- name: Install the packages needed for Elasticsearch
+  ansible.builtin.dnf:
+    name:
+      - wget
+      - gnupg2
+    state: present
+
+- name: Add the Elasticsearch signing key
+  ansible.builtin.rpm_key:
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+
+- name: Add the Elasticsearch package repository
+  ansible.builtin.yum_repository:
+    name: elasticsearch
+    description: Elasticsearch repository
+    baseurl: https://artifacts.elastic.co/packages/9.x/yum
+    gpgcheck: yes
+    gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    enabled: yes
+
+- name: Install Elasticsearch on the server
+  ansible.builtin.dnf:
+    name: elasticsearch
+    state: present
+
+- name: Start Elasticsearch and enable it at boot
+  ansible.builtin.service:
+    name: elasticsearch
+    state: started
+    enabled: yes

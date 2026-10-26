@@ -1,0 +1,52 @@
+---
+- name: Install prerequisites
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - gnupg
+      - wget
+    state: present
+    update_cache: yes
+
+- name: Add Elastic GPG key
+  ansible.builtin.shell:
+    cmd: >
+      wget -qO -
+      https://artifacts.elastic.co/GPG-KEY-elasticsearch |
+      gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
+  args:
+    creates: /usr/share/keyrings/elasticsearch-keyring.gpg
+
+- name: Add Elastic repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/9.x/apt stable main"
+    filename: elastic-9.x
+    state: present
+
+- name: Install Elasticsearch
+  ansible.builtin.apt:
+    name: elasticsearch
+    state: present
+    update_cache: yes
+
+- name: Configure Elasticsearch
+  ansible.builtin.copy:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    content: |
+      cluster.name: activity10-cluster
+      node.name: elasticsearch-node
+      path.data: /var/lib/elasticsearch
+      path.logs: /var/log/elasticsearch
+      network.host: 0.0.0.0
+      http.port: 9200
+      discovery.type: single-node
+    owner: root
+    group: elasticsearch
+    mode: '0660'
+  notify: Restart Elasticsearch
+
+- name: Enable Elasticsearch
+  ansible.builtin.systemd:
+    name: elasticsearch
+    enabled: yes
+    state: started

@@ -1,0 +1,175 @@
+---
+- name: Update Ubuntu repository
+  ansible.builtin.apt:
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Update CentOS repository
+  ansible.builtin.dnf:
+    update_cache: yes
+  when: ansible_distribution == "CentOS"
+
+- name: Install Nagios dependencies on Ubuntu
+  ansible.builtin.apt:
+    name:
+      - autoconf
+      - gcc
+      - libc6
+      - make
+      - wget
+      - unzip
+      - apache2
+      - apache2-utils
+      - php
+      - libapache2-mod-php
+      - libgd-dev
+      - ufw
+      - openssl
+      - libssl-dev
+      - gettext
+      - automake
+      - build-essential
+      - snmp
+      - libnet-snmp-perl
+      - iputils-ping
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install Nagios dependencies on CentOS
+  ansible.builtin.dnf:
+    name:
+      - gcc
+      - glibc
+      - glibc-common
+      - perl
+      - make
+      - gettext
+      - automake
+      - autoconf
+      - wget
+      - gd
+      - gd-devel
+      - httpd
+      - php
+      - openssl-devel
+      - net-snmp
+      - net-snmp-utils
+    state: present
+  when: ansible_distribution == "CentOS"
+
+- name: Create Nagios group
+  ansible.builtin.group:
+    name: nagios
+    state: present
+
+- name: Create Nagios user
+  ansible.builtin.user:
+    name: nagios
+    group: nagios
+    shell: /bin/bash
+    state: present
+
+- name: Add web server user to Nagios group
+  ansible.builtin.user:
+    name: "{{ 'www-data' if ansible_distribution == 'Ubuntu' else 'apache' }}"
+    groups: nagios
+    append: yes
+
+- name: Download Nagios Core
+  ansible.builtin.get_url:
+    url: https://github.com/NagiosEnterprises/nagioscore/releases/download/nagios-4.5.10/nagios-4.5.10.tar.gz
+    dest: /tmp/nagioscore.tar.gz
+
+- name: Extract Nagios Core
+  ansible.builtin.unarchive:
+    src: /tmp/nagioscore.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Configure Nagios Core
+  ansible.builtin.command: ./configure
+  args:
+    chdir: /tmp/nagios-4.5.10
+
+- name: Build Nagios Core
+  ansible.builtin.command: make all
+  args:
+    chdir: /tmp/nagios-4.5.10
+
+- name: Install Nagios Core
+  ansible.builtin.command: make install
+  args:
+    chdir: /tmp/nagios-4.5.10
+
+- name: Install Nagios service
+  ansible.builtin.command: make install-daemoninit
+  args:
+    chdir: /tmp/nagios-4.5.10
+
+- name: Install Nagios command mode
+  ansible.builtin.command: make install-commandmode
+  args:
+    chdir: /tmp/nagios-4.5.10
+
+- name: Install Nagios configuration
+  ansible.builtin.command: make install-config
+  args:
+    chdir: /tmp/nagios-4.5.10
+
+- name: Install Nagios web configuration
+  ansible.builtin.command: make install-webconf
+  args:
+    chdir: /tmp/nagios-4.5.10
+
+- name: Enable Ubuntu Apache modules
+  ansible.builtin.command: "{{ item }}"
+  loop:
+    - a2enmod rewrite
+    - a2enmod cgi
+  when: ansible_distribution == "Ubuntu"
+
+- name: Download Nagios Plugins
+  ansible.builtin.get_url:
+    url: https://github.com/nagios-plugins/nagios-plugins/releases/download/release-2.4.11/nagios-plugins-2.4.11.tar.gz
+    dest: /tmp/nagios-plugins.tar.gz
+
+- name: Extract Nagios Plugins
+  ansible.builtin.unarchive:
+    src: /tmp/nagios-plugins.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Configure Nagios Plugins
+  ansible.builtin.command: ./configure
+  args:
+    chdir: /tmp/nagios-plugins-2.4.11
+
+- name: Build Nagios Plugins
+  ansible.builtin.command: make
+  args:
+    chdir: /tmp/nagios-plugins-2.4.11
+
+- name: Install Nagios Plugins
+  ansible.builtin.command: make install
+  args:
+    chdir: /tmp/nagios-plugins-2.4.11
+
+- name: Enable and start Nagios
+  ansible.builtin.service:
+    name: nagios
+    state: started
+    enabled: yes
+
+- name: Enable and start Ubuntu Apache
+  ansible.builtin.service:
+    name: apache2
+    state: started
+    enabled: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Enable and start CentOS Apache
+  ansible.builtin.service:
+    name: httpd
+    state: started
+    enabled: yes
+  when: ansible_distribution == "CentOS"
