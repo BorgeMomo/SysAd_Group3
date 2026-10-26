@@ -1,0 +1,51 @@
+---
+- name: Install Docker on all managed nodes
+  hosts: all
+  become: yes
+
+  tasks:
+    # Ubuntu installation
+    - name: Update Ubuntu package cache
+      ansible.builtin.apt:
+        update_cache: yes
+        lock_timeout: 300
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Install Docker on Ubuntu
+      ansible.builtin.apt:
+        name: docker.io
+        state: present
+        lock_timeout: 300
+      when: ansible_distribution == "Ubuntu"
+
+    # CentOS installation
+    - name: Remove incompatible Docker package on CentOS
+      ansible.builtin.dnf:
+        name: docker
+        state: absent
+      when: ansible_distribution == "CentOS"
+
+    - name: Add official Docker repository on CentOS
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+        mode: '0644'
+      when: ansible_distribution == "CentOS"
+
+    - name: Install Docker Engine on CentOS
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+      when: ansible_distribution == "CentOS"
+
+    # Start Docker on all machines
+    - name: Start and enable Docker service
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes

@@ -1,0 +1,16 @@
+---
+- name: Configure Docker group permissions
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Create Docker group
+      ansible.builtin.group:
+        name: docker
+        state: present
+
+    - name: Add SSH user to Docker group
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
